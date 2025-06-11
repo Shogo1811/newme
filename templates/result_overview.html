@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>予測の概要</h1>
+<p>RMSE: {{ rmse }}</p>
+<p>R²スコア: {{ r2 }}</p>
+<a href="/result_by_ward">▶ 区ごとの予測へ</a><br>
+<a href="/result_by_era">▶ 築年帯ごとの予測へ</a><br>
+<a href="/result_graphs">▶ グラフを見る</a><br>
+<a href="/">トップに戻る</a>
+{% endblock %}

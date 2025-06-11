@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>グラフで見る予測結果</h1>
+
+<div class="sub-section">
+    <h2>年次別の平均価格推移</h2>
+    <img src="{{ url_for('static', filename='yearly_trend.png') }}" alt="年次別価格推移" style="max-width:100%; border:1px solid #ccc; border-radius:8px;">
+</div>
+
+<div class="sub-section">
+    <h2>実測と予測の散布図</h2>
+    <img src="{{ image_path }}" alt="実測 vs 予測" style="max-width:100%; border:1px solid #ccc; border-radius:8px;">
+</div>
+
+<a href="/result_overview">⬅ 概要へ戻る</a>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>築年帯ごとの予測価格（万円）</h2>
+
+{% for ward, era_data in eras.items() %}
+    <div class="sub-section">
+        <h3>{{ ward }}</h3>
+        <ul>
+            {% for era, price in era_data.items() %}
+                <li>{{ era }}：{{ "{:,.0f}".format(price / 10000) }} 万円</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endfor %}
+
+<a href="/result_overview">⬅ 概要へ戻る</a>
+{% endblock %}

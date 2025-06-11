@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+<head>
+    <title>不動産価格の簡易予測</title>
+    <style>
+        body {
+            font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+            background-color: #f4f4f9;
+            padding: 40px;
+            color: #333;
+        }
+
+        .form-box {
+            max-width: 500px;
+            margin: auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #eafaf1;
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.3em;
+            color: #2e7d32;
+        }
+
+        .back-link {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .back-link a {
+            text-decoration: none;
+            color: #3498db;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-box">
+        <h2>条件を入力して価格を予測</h2>
+        <form method="POST">
+            <label for="size">面積（㎡）</label>
+            <input type="number" name="size" id="size" required>
+
+            <label for="age">築年数（年）</label>
+            <input type="number" name="age" id="age" required>
+
+            <label for="distance">駅からの距離（分）</label>
+            <input type="number" name="distance" id="distance" required>
+
+            <label for="area">エリア（市区町村名）</label>
+            <select name="area" id="area" required>
+                <option value="">選択してください</option>
+
+                <optgroup label="東京23区">
+                    <option value="千代田区">千代田区</option>
+                    <option value="中央区">中央区</option>
+                    <option value="港区">港区</option>
+                    <option value="新宿区">新宿区</option>
+                    <option value="文京区">文京区</option>
+                    <option value="台東区">台東区</option>
+                    <option value="墨田区">墨田区</option>
+                    <option value="江東区">江東区</option>
+                    <option value="品川区">品川区</option>
+                    <option value="目黒区">目黒区</option>
+                    <option value="大田区">大田区</option>
+                    <option value="世田谷区">世田谷区</option>
+                    <option value="渋谷区">渋谷区</option>
+                    <option value="中野区">中野区</option>
+                    <option value="杉並区">杉並区</option>
+                    <option value="豊島区">豊島区</option>
+                    <option value="北区">北区</option>
+                    <option value="荒川区">荒川区</option>
+                    <option value="板橋区">板橋区</option>
+                    <option value="練馬区">練馬区</option>
+                    <option value="足立区">足立区</option>
+                    <option value="葛飾区">葛飾区</option>
+                    <option value="江戸川区">江戸川区</option>
+                </optgroup>
+
+                <optgroup label="23区以外（市・町村）">
+                    <option value="あきる野市">あきる野市</option>
+                    <option value="三鷹市">三鷹市</option>
+                    <option value="八王子市">八王子市</option>
+                    <option value="国分寺市">国分寺市</option>
+                    <option value="国立市">国立市</option>
+                    <option value="多摩市">多摩市</option>
+                    <option value="小平市">小平市</option>
+                    <option value="小金井市">小金井市</option>
+                    <option value="府中市">府中市</option>
+                    <option value="日野市">日野市</option>
+                    <option value="昭島市">昭島市</option>
+                    <option value="東久留米市">東久留米市</option>
+                    <option value="東大和市">東大和市</option>
+                    <option value="東村山市">東村山市</option>
+                    <option value="武蔵村山市">武蔵村山市</option>
+                    <option value="武蔵野市">武蔵野市</option>
+                    <option value="清瀬市">清瀬市</option>
+                    <option value="狛江市">狛江市</option>
+                    <option value="町田市">町田市</option>
+                    <option value="福生市">福生市</option>
+                    <option value="稲城市">稲城市</option>
+                    <option value="立川市">立川市</option>
+                    <option value="羽村市">羽村市</option>
+                    <option value="西多摩郡瑞穂町">西多摩郡瑞穂町</option>
+                    <option value="西東京市">西東京市</option>
+                    <option value="調布市">調布市</option>
+                    <option value="青梅市">青梅市</option>
+                </optgroup>
+            </select>
+
+
+            <button type="submit">予測する</button>
+        </form>
+
+        {% if predicted_price %}
+        <div class="result">
+            予測価格：<strong>{{ "{:,.0f}".format(predicted_price / 10000) }} 万円</strong>
+        </div>
+        {% endif %}
+
+        <div class="back-link">
+            <a href="/">ファイルアップロードに戻る</a>
+        </div>
+    </div>
+</body>
+</html>

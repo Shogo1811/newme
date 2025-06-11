@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+    <title>予測結果</title>
+    <style>
+        body {
+            font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 60px auto;
+            background-color: #fff;
+            padding: 40px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        img {
+            margin-top: 30px;
+            max-width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 30px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .ward-list {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .ward-list h2 {
+            color: #2c3e50;
+            font-size: 1.4em;
+            margin-bottom: 10px;
+        }
+
+        .ward-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ward-list li {
+            font-size: 1.1em;
+            padding: 4px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sub-section {
+            margin-top: 50px;
+            text-align: left;
+        }
+
+        .sub-section h3 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .sub-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .sub-section li {
+            padding: 4px 0;
+        }
+
+        .info-box {
+            background-color: #e8f4fc;
+            border: 1px solid #b3d8ef;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: left;
+            margin-bottom: 40px;
+        }
+
+        .info-box h2 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>予測結果</h1>
+
+        <div class="info-box">
+            <h2>この予測について</h2>
+            <p>
+                本サイトでは、物件の条件（広さ・築年・駅距離・エリアなど）をもとに、<strong>AIが価格を予測</strong>しています。<br>
+                実際の価格との比較で、<strong>「相場より高い or 安い」</strong>を判断できます。
+            </p>
+            <ul>
+                <li>🏠 <strong>面積（㎡）</strong>：広い物件ほど価格が高くなりやすいです</li>
+                <li>🚶‍♀️ <strong>最寄駅からの距離</strong>：駅近の物件は人気で価格が上がる傾向</li>
+                <li>🏙 <strong>エリア（区）</strong>：人気の高い地域ほど価格も高めになります</li>
+                <li>🏗 <strong>築年数</strong>：築浅（新築に近い）ほど高くなる傾向があります</li>
+            </ul>
+            <p>
+                価格差には「改装の有無」「方角や眺望」「売主の事情」なども影響します。<br>
+                あくまで<strong>参考目安</strong>としてご利用ください。
+            </p>
+        </div>
+
+        <p>RMSE: {{ rmse }}</p>
+        <p>R²スコア: {{ r2 }}</p>
+
+        {% if predictions %}
+        <div class="ward-list">
+            <h2>区ごとの予測価格と実際価格（万円）</h2>
+            <ul>
+                {% for ward, price in predictions.items() %}
+                    <li>
+                        {{ ward }}：
+                        予測 {{ "{:,.0f}".format(price / 10000) }} 万円
+                        {% if actuals and ward in actuals %}
+                            ／ 実際 {{ "{:,.0f}".format(actuals[ward] / 10000) }} 万円
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if eras %}
+        <div class="ward-list">
+            <h2>築年帯ごとの予測価格（万円）</h2>
+            {% for ward, era_data in eras.items() %}
+                <div class="sub-section">
+                    <h3>{{ ward }}</h3>
+                    <ul>
+                        {% for era, price in era_data.items() %}
+                            <li>{{ era }}：{{ "{:,.0f}".format(price / 10000) }} 万円</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="ward-list">
+            <h2>年次別の平均価格推移</h2>
+            <img src="{{ url_for('static', filename='yearly_trend.png') }}" alt="年次別価格推移">
+        </div>
+
+        <div>
+            <img src="{{ image_path }}" alt="結果の散布図">
+        </div>
+
+        <br><a href="/">戻る</a>
+    </div>
+</body>
+</html>

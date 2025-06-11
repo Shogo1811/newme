@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>区ごとの予測価格と実際価格（万円）</h2>
+<ul>
+    {% for ward, price in predictions.items() %}
+        <li>
+            {{ ward }}：
+            予測 {{ "{:,.0f}".format(price / 10000) }} 万円
+            {% if actuals and ward in actuals %}
+                ／ 実際 {{ "{:,.0f}".format(actuals[ward] / 10000) }} 万円
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+
+<a href="/result_overview">⬅ 概要へ戻る</a>
+{% endblock %}
