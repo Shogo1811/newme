@@ -4,10 +4,48 @@ import matplotlib
 matplotlib.use("Agg")  # これを追加してGUIを使わないようにする
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.font_manager as fm
+import platform
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
+def setup_japanese_font():
+    """クロスプラットフォーム対応の日本語フォント設定"""
+    system = platform.system()
+
+    if system == "Darwin":  # macOS
+        font_paths = [
+            "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc",
+            "/System/Library/Fonts/Hiragino Sans GB.ttc",
+            "/Library/Fonts/ヒラギノ角ゴ ProN W3.otf"
+        ]
+        for font_path in font_paths:
+            if os.path.exists(font_path):
+                font_prop = fm.FontProperties(fname=font_path)
+                plt.rcParams["font.family"] = font_prop.get_name()
+                print(f"✅ 使用フォント (macOS): {font_prop.get_name()}")
+                break
+        else:
+            plt.rcParams['font.family'] = ['Hiragino Sans', 'DejaVu Sans']
+            print("✅ 使用フォント (macOS): Hiragino Sans (fallback)")
+
+    elif system == "Windows":  # Windows
+        try:
+            # Windows 10/11の標準日本語フォント
+            plt.rcParams['font.family'] = ['Yu Gothic', 'MS Gothic', 'Meiryo', 'DejaVu Sans']
+            print("✅ 使用フォント (Windows): Yu Gothic")
+        except:
+            plt.rcParams['font.family'] = ['MS Gothic', 'DejaVu Sans']
+            print("✅ 使用フォント (Windows): MS Gothic (fallback)")
+
+    else:  # Linux
+        plt.rcParams['font.family'] = ['Noto Sans CJK JP', 'DejaVu Sans']
+        print("✅ 使用フォント (Linux): Noto Sans CJK JP")
+
+    # マイナス記号の文字化け対策（全OS共通）
+    plt.rcParams['axes.unicode_minus'] = False
 
 def parse_distance(distance):
     if isinstance(distance, str):
@@ -24,17 +62,9 @@ def parse_distance(distance):
     return distance
 
 def process_and_predict(file_path: str, plot_path: str = "static/result.png"):
-    import matplotlib.font_manager as fm
-    import os
+    # クロスプラットフォーム対応のフォント設定を適用
+    setup_japanese_font()
 
-    font_path = "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"  # macOS用パス
-
-    if os.path.exists(font_path):
-        font_prop = fm.FontProperties(fname=font_path)
-        plt.rcParams["font.family"] = font_prop.get_name()
-        print(f"✅ 使用フォント: {font_prop.get_name()}")
-    else:
-        print("⚠ 日本語フォントが見つかりません。グラフの文字が表示されない可能性があります。")
     df = pd.read_csv(file_path, encoding="cp932")
     df.columns = df.columns.str.replace("\ufeff", "")
 
@@ -67,7 +97,7 @@ def process_and_predict(file_path: str, plot_path: str = "static/result.png"):
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)
 
-    # 散布図作成
+    # 散布図作成（日本語ラベル使用）
     comparison = pd.DataFrame({"Actual Price": y_test.values, "Predicted Price": y_pred.astype(int)})
     filtered = comparison[(comparison["Actual Price"] < 250000000) & (comparison["Predicted Price"] < 250000000)]
 
@@ -83,10 +113,11 @@ def process_and_predict(file_path: str, plot_path: str = "static/result.png"):
     ax.grid(which="major", linestyle="--", linewidth=0.5)
     plt.scatter(filtered["Actual Price"], filtered["Predicted Price"], color="orange", alpha=0.7)
     plt.plot([0, 2e8], [0, 2e8], '--r', linewidth=2)
-    plt.xlabel("Actual Price (x 1,000,000)")
-    plt.ylabel("Predicted Price (x 1,000,000)")
-    plt.title("Comparison of Actual vs Predicted Prices")
-    plt.savefig(plot_path)
+    plt.xlabel("実際の価格 (百万円)")
+    plt.ylabel("予測価格 (百万円)")
+    plt.title("実際の価格 vs 予測価格の比較")
+    plt.tight_layout()
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.close()
 
     # 区ごとの予測・実価格
@@ -119,17 +150,18 @@ def process_and_predict(file_path: str, plot_path: str = "static/result.png"):
         .to_dict(orient="index")
     )
 
-    # 年度別価格推移グラフ
+    # 年度別価格推移グラフ（フォント設定適用済み）
     original_df["取引年"] = original_df["取引時期"].str.extract(r"(\d{4})").astype(float)
     yearly_price = original_df.groupby("取引年")["取引価格（総額）"].mean().dropna().sort_index()
 
     plt.figure(figsize=(10, 6))
-    yearly_price.plot(marker="o")
-    plt.title("年度ごとの平均取引価格推移")
-    plt.xlabel("取引年")
-    plt.ylabel("平均価格")
-    plt.grid(True)
-    plt.savefig("static/yearly_trend.png")
+    yearly_price.plot(marker="o", linewidth=2, markersize=6)
+    plt.title("年度ごとの平均取引価格推移", fontsize=14, fontweight='bold')
+    plt.xlabel("取引年", fontsize=12)
+    plt.ylabel("平均価格（円）", fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig("static/yearly_trend.png", dpi=300, bbox_inches='tight')
     plt.close()
 
     return rmse, r2, plot_path, ward_predictions, ward_actuals, by_ward_and_era
