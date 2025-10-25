@@ -197,3 +197,77 @@ def get_feature_importance(
     logger.info(f"特徴量重要度トップ5:\n{importance_df.head()}")
 
     return importance_df
+
+
+def predict_single_property(
+    model: RandomForestRegressor,
+    feature_columns: list,
+    area: float,
+    age: int,
+    distance: float,
+    ward: str
+) -> float:
+    """
+    個別の物件条件から価格を予測
+
+    Args:
+        model (RandomForestRegressor): 学習済みモデル
+        feature_columns (list): 学習時に使用した特徴量カラム名のリスト
+        area (float): 面積（㎡）
+        age (int): 築年数（年）
+        distance (float): 最寄駅距離（分）
+        ward (str): 市区町村名
+
+    Returns:
+        float: 予測価格（円）
+    """
+    # 基本特徴量
+    build_year = config.CURRENT_YEAR - age
+    transaction_year = config.CURRENT_YEAR
+
+    # 築年帯の判定
+    if age < 10:
+        age_category = "築10年未満"
+    elif age < 20:
+        age_category = "築10～20年"
+    else:
+        age_category = "築20年以上"
+
+    # データフレーム作成（1行）
+    input_data = {
+        "面積（㎡）": [area],
+        "最寄駅：距離（分）": [distance],
+        "建築年": [build_year],
+        "取引年": [transaction_year]
+    }
+
+    # ダミー変数の初期化（全て0）
+    for col in feature_columns:
+        if col not in input_data:
+            input_data[col] = [0]
+
+    # 該当する区のダミー変数を1にする
+    ward_column = f"市区町村名_{ward}"
+    if ward_column in feature_columns:
+        input_data[ward_column] = [1]
+
+    # 該当する築年帯のダミー変数を1にする
+    age_column = f"築年帯_{age_category}"
+    if age_column in feature_columns:
+        input_data[age_column] = [1]
+
+    # データフレーム作成
+    df_input = pd.DataFrame(input_data)
+
+    # 特徴量の順序を学習時と同じにする
+    df_input = df_input[feature_columns]
+
+    # 予測
+    predicted_price = model.predict(df_input)[0]
+
+    logger.info(
+        f"個別予測: 区={ward}, 面積={area}㎡, 築{age}年, "
+        f"駅徒歩{distance}分 → 予測価格={predicted_price:,.0f}円"
+    )
+
+    return float(predicted_price)

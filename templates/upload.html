@@ -70,10 +70,24 @@
         <input type="file" name="file"><br>
         <input type="submit" value="アップロードして予測">
     </form>
-{#
+
     <div>
         <a class="link-button" href="/predict_input">▶ 個別に条件を入力して予測する</a>
     </div>
-#}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div style="margin-top: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                {% for category, message in messages %}
+                    <div style="padding: 15px; margin: 10px 0; border-radius: 8px;
+                                background-color: {% if category == 'error' %}#ffebee{% elif category == 'warning' %}#fff3e0{% else %}#e8f5e9{% endif %};
+                                color: {% if category == 'error' %}#c62828{% elif category == 'warning' %}#ef6c00{% else %}#2e7d32{% endif %};
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 </body>
 </html>

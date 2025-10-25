@@ -9,6 +9,8 @@ from flask import Flask, request, render_template, redirect, url_for, flash, ses
 from config import config
 from utils.file_handler import validate_uploaded_file, save_uploaded_file, cleanup_old_files
 from services.prediction_service import process_and_predict
+from models.predictor import predict_single_property
+import pickle
 
 # Flask アプリ作成
 app = Flask(
@@ -100,6 +102,11 @@ def upload_file():
             session['actual_prices_by_ward'] = result.actual_prices_by_ward
             session['era_predictions'] = result.era_predictions
 
+            # 個別予測用にモデルと特徴量カラムを保存
+            session['model'] = pickle.dumps(result.model)
+            session['feature_columns'] = result.feature_columns
+            session['has_model'] = True
+
             logger.info("予測処理成功")
             flash("予測が完了しました", "success")
             return redirect(url_for("result_overview"))
@@ -185,6 +192,80 @@ def result_graphs():
         "result_graphs.html",
         image_path=scatter_path
     )
+
+
+# 個別条件入力による価格予測ページ
+@app.route("/predict_input", methods=["GET", "POST"])
+def predict_input():
+    """
+    個別条件入力による価格予測
+
+    GET: 入力フォームを表示
+    POST: 入力条件から価格を予測
+    """
+    predicted_price = None
+
+    if request.method == "POST":
+        try:
+            # フォームから入力値を取得
+            area = float(request.form.get("size", 0))
+            age = int(request.form.get("age", 0))
+            distance = float(request.form.get("distance", 0))
+            ward = request.form.get("area", "")
+
+            # バリデーション
+            if area <= 0:
+                flash("面積は0より大きい値を入力してください", "error")
+                return render_template("predict_input.html")
+
+            if age < 0:
+                flash("築年数は0以上の値を入力してください", "error")
+                return render_template("predict_input.html")
+
+            if distance < 0:
+                flash("最寄駅距離は0以上の値を入力してください", "error")
+                return render_template("predict_input.html")
+
+            if not ward:
+                flash("市区町村名を選択してください", "error")
+                return render_template("predict_input.html")
+
+            # セッションからモデルと特徴量カラムを取得
+            if not session.get('has_model'):
+                flash("先にCSVファイルをアップロードしてモデルを学習させてください", "warning")
+                return redirect(url_for("upload_file"))
+
+            model_bytes = session.get('model')
+            feature_columns = session.get('feature_columns')
+
+            if model_bytes is None or feature_columns is None:
+                flash("モデルデータが見つかりません。CSVファイルを再アップロードしてください", "error")
+                return redirect(url_for("upload_file"))
+
+            # モデルをデシリアライズ
+            model = pickle.loads(model_bytes)
+
+            # 予測実行
+            predicted_price = predict_single_property(
+                model=model,
+                feature_columns=feature_columns,
+                area=area,
+                age=age,
+                distance=distance,
+                ward=ward
+            )
+
+            logger.info(f"個別予測成功: {predicted_price:,.0f}円")
+            flash("予測が完了しました", "success")
+
+        except ValueError as e:
+            flash(f"入力エラー: {e}", "error")
+            logger.error(f"個別予測バリデーションエラー: {e}")
+        except Exception as e:
+            flash(f"予測中にエラーが発生しました: {e}", "error")
+            logger.error(f"個別予測エラー: {e}", exc_info=True)
+
+    return render_template("predict_input.html", predicted_price=predicted_price)
 
 
 # エラーハンドラ
